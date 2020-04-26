@@ -14,6 +14,14 @@
       :style="{ height: `${block.h}vh`, 'background-color': block.c }"
     />
   </div>
+  <div class="debugger">
+    Window center coordinate:<br />
+    {{ centerCoordinate }}<br /><br />
+    Chosen center coordinate:<br />
+    {{ chosenBlockCoordinate }}<br /><br />
+    Chosen met window center:<br />
+    {{ chosenCollideWindowCenter }}
+  </div>
 </template>
 <script lang="ts" src="./"></script>
 <style lang="scss" scoped>
@@ -30,5 +38,15 @@
   &:focus {
     transform: scale(1.1);
   }
+}
+
+.debugger {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  width: 200px;
+  height: 200px;
+  background: white;
+  border: 1px solid black;
 }
 </style>

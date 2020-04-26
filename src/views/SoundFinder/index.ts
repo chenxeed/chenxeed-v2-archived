@@ -6,23 +6,71 @@ interface Block {
   c: string;
 }
 
+interface Coordinate {
+  x: number;
+  y: number;
+}
+
 interface Data {
   blocks: Block[];
-  chosenBlock: number;
   masonryInstance: unknown;
+  centerCoordinate: Coordinate;
+  chosenBlock?: Element;
+  chosenBlockCoordinate?: Coordinate;
 }
 
 const RANDOM_COLORS = ["red", "green", "blue", "yellow", "grey"];
+
+function getCenterCoordinate(): Coordinate {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
+  return {
+    x: width / 2 + scrollX,
+    y: height / 2 + scrollY
+  };
+}
+
+function getElementCoordinate(elem: Element): Coordinate {
+  const bound = elem.getBoundingClientRect();
+  const scrollX = window.scrollX;
+  const scrollY = window.scrollY;
+  return {
+    x: bound.left + scrollX,
+    y: bound.top + scrollY
+  };
+}
 
 export default defineComponent({
   name: "SoundFinder",
   data() {
     const data: Data = {
       blocks: [],
-      chosenBlock: -1,
-      masonryInstance: null
+      masonryInstance: null,
+      centerCoordinate: getCenterCoordinate(),
+      chosenBlock: undefined,
+      chosenBlockCoordinate: undefined
     };
     return data;
+  },
+  computed: {
+    chosenCollideWindowCenter(): Coordinate | undefined {
+      if (this.centerCoordinate && this.chosenBlockCoordinate) {
+        return {
+          x: Math.abs(this.centerCoordinate.x - this.chosenBlockCoordinate.x),
+          y: Math.abs(this.centerCoordinate.y - this.chosenBlockCoordinate.y)
+        };
+      }
+    }
+  },
+  mounted() {
+    window.addEventListener("resize", this.onResize);
+    window.addEventListener("scroll", this.onScroll);
+  },
+  beforeUnmount() {
+    window.removeEventListener("resize", this.updateCenterCoordinate);
+    window.removeEventListener("scroll", this.onScroll);
   },
   methods: {
     clearBlocks() {
@@ -56,13 +104,33 @@ export default defineComponent({
     chooseRandomBlock() {
       const count = this.blocks.length;
       if (count) {
-        this.chosenBlock = Math.floor(Math.random() * count);
+        const chosenIndex = Math.floor(Math.random() * count);
+        const blocks = document.querySelector(".block-wrapper")?.children;
+        if (blocks && chosenIndex >= 0) {
+          this.chosenBlock = blocks[chosenIndex];
+          this.chosenBlockCoordinate = getElementCoordinate(this.chosenBlock);
+        }
       }
     },
-    onClickGenerate() {
+    updateCenterCoordinate() {
+      this.centerCoordinate = getCenterCoordinate();
+    },
+    updateChosenBlockCoordinate() {
+      if (this.chosenBlock) {
+        this.chosenBlockCoordinate = getElementCoordinate(this.chosenBlock);
+      }
+    },
+    async onClickGenerate() {
       this.clearBlocks();
-      this.generateBlocks(500);
+      await this.generateBlocks(500);
       this.chooseRandomBlock();
+    },
+    async onResize() {
+      this.updateCenterCoordinate();
+      this.updateChosenBlockCoordinate();
+    },
+    async onScroll() {
+      this.updateCenterCoordinate();
     }
   }
 });
