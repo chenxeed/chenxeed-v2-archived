@@ -1,11 +1,17 @@
 import { RouteRecordRaw, createRouter, createWebHistory } from "vue-router";
 import Home from "../views/Home.vue";
+import SoundFinder from "@/views/SoundFinder/index.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
     name: "Home",
     component: Home
+  },
+  {
+    path: "/soundfinder",
+    name: "SoundFinder",
+    component: SoundFinder
   },
   {
     path: "/about",
