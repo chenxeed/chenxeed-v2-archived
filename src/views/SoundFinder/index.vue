@@ -10,6 +10,7 @@
       v-for="(block, index) in blocks"
       :key="index"
       class="block"
+      :tabindex="index + 1"
       :style="{ height: `${block.h}vh`, 'background-color': block.c }"
     />
   </div>
@@ -21,6 +22,13 @@
 }
 
 .block {
+  cursor: pointer;
   border: 2px solid black;
+  transition: 0.2s transform;
+
+  &:hover,
+  &:focus {
+    transform: scale(1.1);
+  }
 }
 </style>
