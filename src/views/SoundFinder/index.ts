@@ -8,7 +8,7 @@ interface Block {
 
 interface Data {
   blocks: Block[];
-  soundIdx: number;
+  chosenBlock: number;
   masonryInstance: unknown;
 }
 
@@ -19,7 +19,7 @@ export default defineComponent({
   data() {
     const data: Data = {
       blocks: [],
-      soundIdx: -1,
+      chosenBlock: -1,
       masonryInstance: null
     };
     return data;
@@ -53,9 +53,16 @@ export default defineComponent({
         }
       });
     },
+    chooseRandomBlock() {
+      const count = this.blocks.length;
+      if (count) {
+        this.chosenBlock = Math.floor(Math.random() * count);
+      }
+    },
     onClickGenerate() {
       this.clearBlocks();
       this.generateBlocks(500);
+      this.chooseRandomBlock();
     }
   }
 });
