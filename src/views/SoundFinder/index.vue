@@ -11,7 +11,11 @@
       :key="index"
       class="block"
       :tabindex="index + 1"
-      :style="{ height: `${block.h}vh`, 'background-color': block.c }"
+      :style="{
+        height: `${block.h}vh`,
+        'background-color': block.c,
+        opacity: index === chosenBlockIndex ? 1 : 0.2
+      }"
     />
   </div>
   <div class="debugger">
@@ -20,7 +24,8 @@
     Chosen center coordinate:<br />
     {{ chosenBlockCoordinate }}<br /><br />
     Chosen met window center:<br />
-    {{ chosenCollideWindowCenter }}
+    {{ chosenCollideWindowCenter }}<br />
+    Volume: {{ soundVolume }}
   </div>
 </template>
 <script lang="ts" src="./"></script>

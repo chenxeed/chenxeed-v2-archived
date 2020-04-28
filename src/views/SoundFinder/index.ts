@@ -15,8 +15,10 @@ interface Data {
   blocks: Block[];
   masonryInstance: unknown;
   centerCoordinate: Coordinate;
+  chosenBlockIndex?: number;
   chosenBlock?: Element;
   chosenBlockCoordinate?: Coordinate;
+  volumeRange: number; // the minimal range to be able to listen to the sound
 }
 
 const RANDOM_COLORS = ["red", "green", "blue", "yellow", "grey"];
@@ -49,8 +51,10 @@ export default defineComponent({
       blocks: [],
       masonryInstance: null,
       centerCoordinate: getCenterCoordinate(),
+      chosenBlockIndex: undefined,
       chosenBlock: undefined,
-      chosenBlockCoordinate: undefined
+      chosenBlockCoordinate: undefined,
+      volumeRange: 1000
     };
     return data;
   },
@@ -58,9 +62,23 @@ export default defineComponent({
     chosenCollideWindowCenter(): Coordinate | undefined {
       if (this.centerCoordinate && this.chosenBlockCoordinate) {
         return {
-          x: Math.abs(this.centerCoordinate.x - this.chosenBlockCoordinate.x),
-          y: Math.abs(this.centerCoordinate.y - this.chosenBlockCoordinate.y)
+          x: this.centerCoordinate.x - this.chosenBlockCoordinate.x,
+          y: this.centerCoordinate.y - this.chosenBlockCoordinate.y
         };
+      }
+    },
+    soundVolume(): number {
+      if (this.chosenCollideWindowCenter) {
+        const horizontalVolume =
+          (this.volumeRange - Math.abs(this.chosenCollideWindowCenter.x)) /
+          this.volumeRange;
+        const verticalVolume =
+          (this.volumeRange - Math.abs(this.chosenCollideWindowCenter.y)) /
+          this.volumeRange;
+        const avgVolume = (horizontalVolume + verticalVolume) / 2;
+        return avgVolume < 0 ? 0 : avgVolume;
+      } else {
+        return 0;
       }
     }
   },
@@ -107,6 +125,7 @@ export default defineComponent({
         const chosenIndex = Math.floor(Math.random() * count);
         const blocks = document.querySelector(".block-wrapper")?.children;
         if (blocks && chosenIndex >= 0) {
+          this.chosenBlockIndex = chosenIndex;
           this.chosenBlock = blocks[chosenIndex];
           this.chosenBlockCoordinate = getElementCoordinate(this.chosenBlock);
         }
