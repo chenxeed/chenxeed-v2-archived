@@ -14,24 +14,31 @@ interface Coordinate {
 interface Data {
   blocks: Block[];
   masonryInstance: unknown;
-  centerCoordinate: Coordinate;
+  centerCoordinate?: Coordinate;
   chosenBlockIndex?: number;
   chosenBlock?: Element;
   chosenBlockCoordinate?: Coordinate;
   volumeRange: number; // the minimal range to be able to listen to the sound
+  enterGameMode: boolean;
 }
 
 const RANDOM_COLORS = ["red", "green", "blue", "yellow", "grey"];
 
-function getCenterCoordinate(): Coordinate {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  const scrollX = window.scrollX;
-  const scrollY = window.scrollY;
-  return {
-    x: width / 2 + scrollX,
-    y: height / 2 + scrollY
-  };
+let domBlockWrapper: Element | null = null;
+function getBlockCenterCoordinate(): Coordinate | undefined {
+  if (!domBlockWrapper) {
+    domBlockWrapper = document.querySelector(".block-wrapper");
+  }
+  if (domBlockWrapper) {
+    const width = domBlockWrapper.clientWidth;
+    const height = domBlockWrapper.clientHeight;
+    const scrollX = domBlockWrapper.scrollLeft;
+    const scrollY = domBlockWrapper.scrollTop;
+    return {
+      x: width / 2 + scrollX,
+      y: height / 2 + scrollY
+    };
+  }
 }
 
 function getElementCoordinate(elem: Element): Coordinate {
@@ -39,8 +46,8 @@ function getElementCoordinate(elem: Element): Coordinate {
   const scrollX = window.scrollX;
   const scrollY = window.scrollY;
   return {
-    x: bound.left + scrollX,
-    y: bound.top + scrollY
+    x: bound.left + (bound.right - bound.left) / 2 + scrollX,
+    y: bound.top + (bound.bottom - bound.top) / 2 + scrollY
   };
 }
 
@@ -50,11 +57,12 @@ export default defineComponent({
     const data: Data = {
       blocks: [],
       masonryInstance: null,
-      centerCoordinate: getCenterCoordinate(),
+      centerCoordinate: undefined,
       chosenBlockIndex: undefined,
       chosenBlock: undefined,
       chosenBlockCoordinate: undefined,
-      volumeRange: 1000
+      volumeRange: 1000,
+      enterGameMode: false
     };
     return data;
   },
@@ -84,11 +92,15 @@ export default defineComponent({
   },
   mounted() {
     window.addEventListener("resize", this.onResize);
-    window.addEventListener("scroll", this.onScroll);
+    document
+      .querySelector(".block-wrapper")
+      ?.addEventListener("scroll", this.onScroll);
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.updateCenterCoordinate);
-    window.removeEventListener("scroll", this.onScroll);
+    document
+      .querySelector(".block-wrapper")
+      ?.removeEventListener("scroll", this.onScroll);
   },
   methods: {
     clearBlocks() {
@@ -108,22 +120,21 @@ export default defineComponent({
         });
       }
 
+      this.enterGameMode = true;
+
       await this.$nextTick();
 
       this.masonryInstance = Macy({
-        container: document.querySelector(".block-wrapper"),
+        container: document.querySelector(".block-container"),
         margin: 30,
-        columns: 10,
-        breakAt: {
-          480: 6
-        }
+        columns: 10
       });
     },
     chooseRandomBlock() {
       const count = this.blocks.length;
       if (count) {
         const chosenIndex = Math.floor(Math.random() * count);
-        const blocks = document.querySelector(".block-wrapper")?.children;
+        const blocks = document.querySelector(".block-container")?.children;
         if (blocks && chosenIndex >= 0) {
           this.chosenBlockIndex = chosenIndex;
           this.chosenBlock = blocks[chosenIndex];
@@ -132,7 +143,7 @@ export default defineComponent({
       }
     },
     updateCenterCoordinate() {
-      this.centerCoordinate = getCenterCoordinate();
+      this.centerCoordinate = getBlockCenterCoordinate();
     },
     updateChosenBlockCoordinate() {
       if (this.chosenBlock) {
