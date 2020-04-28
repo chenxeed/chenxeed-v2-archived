@@ -19,9 +19,9 @@
           :tabindex="index + 1"
           :style="{
             height: `${block.h}vh`,
-            'background-color': block.c,
-            opacity: index === chosenBlockIndex ? 1 : 0.2
+            'background-color': block.c
           }"
+          @click="onClickBlock(index)"
         />
       </div>
     </div>
@@ -75,6 +75,7 @@
 
 .debugger {
   position: fixed;
+  z-index: 1000;
   top: 100px;
   right: 100px;
   width: 200px;

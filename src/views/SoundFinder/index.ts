@@ -168,6 +168,13 @@ export default defineComponent({
     },
     async onScroll() {
       this.updateCenterCoordinate();
+    },
+    onClickBlock(index: number) {
+      if (index === this.chosenBlockIndex) {
+        alert("Correct!");
+      } else {
+        alert("Try again!");
+      }
     }
   }
 });
