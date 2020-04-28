@@ -5,7 +5,11 @@
       <button @click="onClickGenerate">Generate</button>
     </div>
   </div>
-  <div class="block-wrapper" :class="{ fullscreen: enterGameMode }">
+  <div
+    ref="blockWrapper"
+    class="block-wrapper"
+    :class="{ fullscreen: enterGameMode }"
+  >
     <div v-if="enterGameMode" class="block-spacer">
       <div class="block-container">
         <div

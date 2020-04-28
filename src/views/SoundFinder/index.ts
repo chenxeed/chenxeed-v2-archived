@@ -120,8 +120,6 @@ export default defineComponent({
         });
       }
 
-      this.enterGameMode = true;
-
       await this.$nextTick();
 
       this.masonryInstance = Macy({
@@ -150,10 +148,19 @@ export default defineComponent({
         this.chosenBlockCoordinate = getElementCoordinate(this.chosenBlock);
       }
     },
+    scrollToCenter() {
+      const blockWrapper = this.$refs.blockWrapper as Element;
+      const width = blockWrapper.scrollWidth;
+      const height = blockWrapper.scrollHeight;
+      blockWrapper.scrollLeft = width / 2;
+      blockWrapper.scrollTop = height / 2;
+    },
     async onClickGenerate() {
+      this.enterGameMode = true;
       this.clearBlocks();
       await this.generateBlocks(500);
       this.chooseRandomBlock();
+      this.scrollToCenter();
     },
     async onResize() {
       this.updateCenterCoordinate();
