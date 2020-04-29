@@ -61,7 +61,7 @@ export default defineComponent({
       chosenBlockIndex: undefined,
       chosenBlock: undefined,
       chosenBlockCoordinate: undefined,
-      volumeRange: 1000,
+      volumeRange: 2000,
       enterGameMode: false
     };
     return data;
@@ -125,7 +125,7 @@ export default defineComponent({
       this.masonryInstance = Macy({
         container: document.querySelector(".block-container"),
         margin: 30,
-        columns: 10
+        columns: 20
       });
     },
     chooseRandomBlock() {
@@ -172,6 +172,8 @@ export default defineComponent({
     onClickBlock(index: number) {
       if (index === this.chosenBlockIndex) {
         alert("Correct!");
+        this.clearBlocks();
+        this.enterGameMode = false;
       } else {
         alert("Try again!");
       }
