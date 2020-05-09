@@ -1,5 +1,6 @@
 import { defineComponent } from "vue";
 import Macy from "macy";
+import { debounce } from "lodash";
 
 interface Block {
   h: number;
@@ -138,7 +139,7 @@ export default defineComponent({
       }
       if (this.masonryInstance) {
         this.masonryInstance.on("macy.recalculated", () => {
-          this.updateChosenBlockCoordinate();
+          this.debounceUpdateChosenBlockCoordinate();
         });
       }
     },
@@ -153,6 +154,9 @@ export default defineComponent({
         );
       }
     },
+    debounceUpdateChosenBlockCoordinate: debounce(function() {
+      this.updateChosenBlockCoordinate();
+    }, 1000),
     scrollToCenter() {
       const blockWrapper = this.$refs.blockWrapper as Element;
       const width = blockWrapper.scrollWidth;
