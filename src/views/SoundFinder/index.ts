@@ -24,27 +24,24 @@ interface Data {
 
 const RANDOM_COLORS = ["red", "green", "blue", "yellow", "grey"];
 
-let domBlockWrapper: Element | null = null;
-function getBlockCenterCoordinate(): Coordinate | undefined {
-  if (!domBlockWrapper) {
-    domBlockWrapper = document.querySelector(".block-wrapper");
-  }
-  if (domBlockWrapper) {
-    const width = domBlockWrapper.clientWidth;
-    const height = domBlockWrapper.clientHeight;
-    const scrollX = domBlockWrapper.scrollLeft;
-    const scrollY = domBlockWrapper.scrollTop;
-    return {
-      x: width / 2 + scrollX,
-      y: height / 2 + scrollY
-    };
-  }
+function getBlockCenterCoordinate(domBlockWrapper: Element): Coordinate {
+  const width = domBlockWrapper.clientWidth;
+  const height = domBlockWrapper.clientHeight;
+  const scrollX = domBlockWrapper.scrollLeft;
+  const scrollY = domBlockWrapper.scrollTop;
+  return {
+    x: width / 2 + scrollX,
+    y: height / 2 + scrollY
+  };
 }
 
-function getElementCoordinate(elem: Element): Coordinate {
+function getElementCoordinate(
+  domBlockWrapper: Element,
+  elem: Element
+): Coordinate {
   const bound = elem.getBoundingClientRect();
-  const scrollX = window.scrollX;
-  const scrollY = window.scrollY;
+  const scrollX = domBlockWrapper.scrollLeft;
+  const scrollY = domBlockWrapper.scrollTop;
   return {
     x: bound.left + (bound.right - bound.left) / 2 + scrollX,
     y: bound.top + (bound.bottom - bound.top) / 2 + scrollY
@@ -136,16 +133,24 @@ export default defineComponent({
         if (blocks && chosenIndex >= 0) {
           this.chosenBlockIndex = chosenIndex;
           this.chosenBlock = blocks[chosenIndex];
-          this.chosenBlockCoordinate = getElementCoordinate(this.chosenBlock);
+          this.updateChosenBlockCoordinate();
         }
+      }
+      if (this.masonryInstance) {
+        this.masonryInstance.on("macy.recalculated", () => {
+          this.updateChosenBlockCoordinate();
+        });
       }
     },
     updateCenterCoordinate() {
-      this.centerCoordinate = getBlockCenterCoordinate();
+      this.centerCoordinate = getBlockCenterCoordinate(this.$refs.blockWrapper);
     },
     updateChosenBlockCoordinate() {
       if (this.chosenBlock) {
-        this.chosenBlockCoordinate = getElementCoordinate(this.chosenBlock);
+        this.chosenBlockCoordinate = getElementCoordinate(
+          this.$refs.blockWrapper,
+          this.chosenBlock
+        );
       }
     },
     scrollToCenter() {
@@ -164,7 +169,6 @@ export default defineComponent({
     },
     async onResize() {
       this.updateCenterCoordinate();
-      this.updateChosenBlockCoordinate();
     },
     async onScroll() {
       this.updateCenterCoordinate();
