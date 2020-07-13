@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div class="navigation">
+    <div class="navigation" :class="navigationClass">
       <div>
         <img class="mw-100" src="/logo-chenxeed.png" />
       </div>
@@ -9,7 +9,7 @@
       <router-link class="text-dark router" to="/blog">Blog</router-link>
       <router-link class="text-dark router" to="/about">About</router-link>
     </div>
-    <div class="container-fluid">
+    <div class="container-fluid content" :class="containerClass">
       <router-view />
     </div>
     <div class="footer px-5 bg-dark text-white">
@@ -25,37 +25,69 @@ import { RouteName } from "@/router";
 export default defineComponent({
   name: "App",
   data() {
-    return {
-      isHomepage: true
+    const data: { routeName: RouteName } = {
+      routeName: RouteName.Home
     };
+    return data;
+  },
+  computed: {
+    isHomepage() {
+      return this.routeName === RouteName.Home;
+    },
+    navigationClass() {
+      return this.isHomepage ? "" : "side";
+    },
+    containerClass() {
+      const bgClass = `bg-color-${this.routeName}`;
+      const widthClass = this.isHomepage ? "" : "show";
+      return [bgClass, widthClass];
+    }
   },
   mounted() {
-    (this.$router as Router).beforeEach(route => {
-      if (route.name === RouteName.Home) {
-        this.isHomepage = true;
-      } else {
-        this.isHomepage = false;
+    (this.$router as Router).beforeEach((to, from, next) => {
+      if (typeof to.name === "string") {
+        this.routeName = to.name as RouteName;
       }
-      console.log(this.isHomepage);
+      next();
     });
   }
 });
 </script>
 <style lang="scss">
 @import url("~bootstrap/scss/bootstrap.scss");
-
+</style>
+<style lang="scss" scoped>
 $footer-height: 50px;
+$side-width: 100px;
+$colors: (
+  "home": #2d728f,
+  "labs": #3b8ea5,
+  "blog": #f5ee9e,
+  "about": #f49e4c
+);
+$nav-transition-time: 0.5s;
+
+@each $name, $color in $colors {
+  .bg-color-#{$name} {
+    background-color: $color;
+  }
+}
 
 .navigation {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: calc(100% - #{$footer-height});
+  height: calc(100vh - #{$footer-height});
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-around;
+  transition: all $nav-transition-time cubic-bezier(0.55, 0.06, 0.68, 0.19);
+
+  &.side {
+    width: $side-width;
+  }
 
   .router {
     width: 80%;
@@ -63,17 +95,11 @@ $footer-height: 50px;
     padding: 1em;
     transition: all 0.25s ease;
 
-    &:nth-child(2) {
-      background: #2d728f;
-    }
-    &:nth-child(3) {
-      background: #3b8ea5;
-    }
-    &:nth-child(4) {
-      background: #f5ee9e;
-    }
-    &:nth-child(5) {
-      background: #f49e4c;
+    @each $name, $color in $colors {
+      $i: index(($colors), ($name $color)) + 1;
+      &:nth-child(#{$i}) {
+        background: $color;
+      }
     }
 
     &:hover {
@@ -81,6 +107,20 @@ $footer-height: 50px;
       box-shadow: 1px 5px 5px black;
       text-decoration: none;
     }
+  }
+}
+
+.content {
+  position: relative;
+  left: 100vw;
+  transition: all $nav-transition-time cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  margin: 0px;
+  width: calc(100% - #{$side-width});
+  visibility: hidden;
+
+  &.show {
+    left: $side-width;
+    visibility: visible;
   }
 }
 
