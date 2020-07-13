@@ -54,7 +54,7 @@ export default defineComponent({
 });
 </script>
 <style lang="scss">
-@import url("~bootstrap/scss/bootstrap.scss");
+@import "~bootstrap/scss/bootstrap/";
 </style>
 <style lang="scss" scoped>
 $footer-height: 50px;
