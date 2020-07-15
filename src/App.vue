@@ -111,16 +111,18 @@ $nav-transition-time: 0.5s;
 }
 
 .content {
+  left: $side-width;
   position: relative;
-  left: 100vw;
-  transition: all $nav-transition-time cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  transition: all $nav-transition-time cubic-bezier(0.55, 0.06, 0.68, 0.19)
+    $nav-transition-time;
   margin: 0px;
   width: calc(100% - #{$side-width});
   visibility: hidden;
+  opacity: 0;
 
   &.show {
-    left: $side-width;
     visibility: visible;
+    opacity: 1;
   }
 }
 
