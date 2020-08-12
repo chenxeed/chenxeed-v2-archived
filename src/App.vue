@@ -10,7 +10,14 @@
       <router-link class="text-dark router" to="/about">About</router-link>
     </div>
     <div class="container-fluid content" :class="containerClass">
-      <router-view />
+      <Suspense>
+        <template #default>
+          <router-view />
+        </template>
+        <template #fallback>
+          <div>Loading...</div>
+        </template>
+      </Suspense>
     </div>
     <div class="footer px-5 bg-dark text-white">
       <div>&copy; chenxeed 2020</div>
@@ -63,7 +70,8 @@ $colors: (
   "home": #2d728f,
   "labs": #3b8ea5,
   "blog": #f5ee9e,
-  "about": #f49e4c
+  "about": #f49e4c,
+  "nav": beige
 );
 $nav-transition-time: 0.5s;
 
@@ -87,6 +95,7 @@ $nav-transition-time: 0.5s;
 
   &.side {
     width: $side-width;
+    background: map-get($map: $colors, $key: "nav");
   }
 
   .router {
