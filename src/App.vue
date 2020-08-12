@@ -130,6 +130,7 @@ $nav-transition-time: 0.5s;
   opacity: 0;
 
   &.show {
+    margin-bottom: $footer-height;
     visibility: visible;
     opacity: 1;
   }
