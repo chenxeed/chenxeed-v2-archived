@@ -126,6 +126,7 @@ $nav-transition-time: 0.5s;
     $nav-transition-time;
   margin: 0px;
   width: calc(100% - #{$side-width});
+  min-height: calc(100vh - #{$footer-height});
   visibility: hidden;
   opacity: 0;
 
