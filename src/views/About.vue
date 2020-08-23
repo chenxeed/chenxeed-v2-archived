@@ -2,36 +2,43 @@
 import { defineComponent, onMounted, ref, computed } from "vue";
 import { Machine, interpret } from "xstate";
 
+enum Segment {
+  NONE = "none",
+  EXPERIENCE = "experience",
+  SKILL = "skill",
+  EDU = "edu",
+  LIFE = "life"
+}
+
+type ValueOf<T> = T[keyof T];
 type StateSchema = {
-  states: {
-    none: {};
-    experience: {};
-    skill: {};
-    edu: {};
-    life: {};
-  };
+  states: Record<Segment, {}>;
 };
 
 type MEvent = { type: "PREV" } | { type: "NEXT" };
 
+const jumpAction = {
+  actions: ["jumpTo"]
+};
+
 const navigationMachine = Machine<any, StateSchema, MEvent>({
   id: "navigation",
-  initial: "none",
+  initial: Segment.NONE,
   states: {
-    none: {
-      on: { PREV: "life", NEXT: "experience" }
+    [Segment.NONE]: {
+      on: { PREV: Segment.LIFE, NEXT: Segment.EXPERIENCE }
     },
-    experience: {
-      on: { PREV: "none", NEXT: "skill" }
+    [Segment.EXPERIENCE]: {
+      on: { PREV: Segment.NONE, NEXT: Segment.SKILL }
     },
-    skill: {
-      on: { PREV: "experience", NEXT: "edu" }
+    [Segment.SKILL]: {
+      on: { PREV: Segment.EXPERIENCE, NEXT: Segment.EDU }
     },
-    edu: {
-      on: { PREV: "skill", NEXT: "life" }
+    [Segment.EDU]: {
+      on: { PREV: Segment.SKILL, NEXT: Segment.LIFE }
     },
-    life: {
-      on: { PREV: "edu", NEXT: "none" }
+    [Segment.LIFE]: {
+      on: { PREV: Segment.EDU, NEXT: Segment.NONE }
     }
   }
 });
@@ -51,7 +58,9 @@ export default defineComponent({
     const stateService = interpret(navigationMachine);
     const state = ref(stateService.initialState);
     const { send } = stateService;
-    stateService.onTransition(newState => (state.value = newState));
+    stateService.onTransition(newState => {
+      state.value = newState;
+    });
 
     onMounted(() => {
       mounted.value = true;
@@ -89,21 +98,25 @@ export default defineComponent({
     return {
       state,
       send,
-      avatarStyle
+      avatarStyle,
+      Segment
     };
   }
 });
 </script>
 <template>
-  <div class="detail detail-none"></div>
-  <div class="detail detail-experience"></div>
-  <div class="detail detail-skill"></div>
-  <div class="detail detail-edu"></div>
-  <div class="detail detail-life"></div>
-  <div class="avatar" :style="avatarStyle">
-    <img
-      src="http://www.avatarsinpixels.com/minipix/eyJNb3V0aCI6IjYiLCJQYW50cyI6IjEiLCJUb3AiOiI1IiwiQmVsdCI6IjEiLCJKYWNrZXQiOiIxIn0=/1/show.png"
+  <div>
+    <div
+      v-for="segment in Segment"
+      :key="segment"
+      class="detail"
+      :class="`detail-${segment}`"
     />
+    <div class="avatar" :style="avatarStyle">
+      <img
+        src="http://www.avatarsinpixels.com/minipix/eyJNb3V0aCI6IjYiLCJQYW50cyI6IjEiLCJUb3AiOiI1IiwiQmVsdCI6IjEiLCJKYWNrZXQiOiIxIn0=/1/show.png"
+      />
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
