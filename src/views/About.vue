@@ -15,30 +15,44 @@ type StateSchema = {
   states: Record<Segment, {}>;
 };
 
-type MEvent = { type: "PREV" } | { type: "NEXT" };
-
 const jumpAction = {
   actions: ["jumpTo"]
 };
+const jumpToState = Object.keys(Segment).reduce<Record<string, string>>(
+  (event, state) => {
+    event[`TO_${state}`] = (Segment as Record<any, any>)[state];
+    return event;
+  },
+  {}
+);
+
+type MEvent =
+  | { type: "PREV" }
+  | { type: "NEXT" }
+  | { type: "TO_NONE" }
+  | { type: "TO_EXPERIENCE" }
+  | { type: "TO_SKILL" }
+  | { type: "TO_EDU" }
+  | { type: "TO_LIFE" };
 
 const navigationMachine = Machine<any, StateSchema, MEvent>({
   id: "navigation",
   initial: Segment.NONE,
   states: {
     [Segment.NONE]: {
-      on: { PREV: Segment.LIFE, NEXT: Segment.EXPERIENCE }
+      on: { PREV: Segment.LIFE, NEXT: Segment.EXPERIENCE, ...jumpToState }
     },
     [Segment.EXPERIENCE]: {
-      on: { PREV: Segment.NONE, NEXT: Segment.SKILL }
+      on: { PREV: Segment.NONE, NEXT: Segment.SKILL, ...jumpToState }
     },
     [Segment.SKILL]: {
-      on: { PREV: Segment.EXPERIENCE, NEXT: Segment.EDU }
+      on: { PREV: Segment.EXPERIENCE, NEXT: Segment.EDU, ...jumpToState }
     },
     [Segment.EDU]: {
-      on: { PREV: Segment.SKILL, NEXT: Segment.LIFE }
+      on: { PREV: Segment.SKILL, NEXT: Segment.LIFE, ...jumpToState }
     },
     [Segment.LIFE]: {
-      on: { PREV: Segment.EDU, NEXT: Segment.NONE }
+      on: { PREV: Segment.EDU, NEXT: Segment.NONE, ...jumpToState }
     }
   }
 });
@@ -95,10 +109,16 @@ export default defineComponent({
       }
     });
 
+    const jumpTo = (key: keyof typeof Segment) => {
+      const to = (`TO_` + key) as MEvent["type"];
+      send(to);
+    };
+
     return {
       state,
       send,
       avatarStyle,
+      jumpTo,
       Segment
     };
   }
@@ -107,10 +127,11 @@ export default defineComponent({
 <template>
   <div>
     <div
-      v-for="segment in Segment"
-      :key="segment"
+      v-for="(segment, key) in Segment"
+      :key="key"
       class="detail"
       :class="`detail-${segment}`"
+      @click="jumpTo(key)"
     />
     <div class="avatar" :style="avatarStyle">
       <img
