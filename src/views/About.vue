@@ -1,6 +1,6 @@
 <script lang="ts">
 import { defineComponent, onMounted, ref, computed } from "vue";
-import { Machine, interpret } from "xstate";
+import { Machine, interpret, assign } from "xstate";
 
 enum Segment {
   NONE = "none",
@@ -12,50 +12,99 @@ enum Segment {
 
 type ValueOf<T> = T[keyof T];
 type StateSchema = {
-  states: Record<Segment, {}>;
+  states: {
+    idle: {};
+    moving: {};
+  };
 };
 
-const jumpAction = {
-  actions: ["jumpTo"]
-};
-const jumpToState = Object.keys(Segment).reduce<Record<string, string>>(
-  (event, state) => {
-    event[`TO_${state}`] = (Segment as Record<any, any>)[state];
-    return event;
-  },
-  {}
-);
+interface MContext {
+  segment: Segment;
+  segmentOrder: Segment[];
+}
 
 type MEvent =
   | { type: "PREV" }
   | { type: "NEXT" }
-  | { type: "TO_NONE" }
-  | { type: "TO_EXPERIENCE" }
-  | { type: "TO_SKILL" }
-  | { type: "TO_EDU" }
-  | { type: "TO_LIFE" };
+  | { type: "JUMP"; segment: Segment };
 
-const navigationMachine = Machine<any, StateSchema, MEvent>({
-  id: "navigation",
-  initial: Segment.NONE,
-  states: {
-    [Segment.NONE]: {
-      on: { PREV: Segment.LIFE, NEXT: Segment.EXPERIENCE, ...jumpToState }
-    },
-    [Segment.EXPERIENCE]: {
-      on: { PREV: Segment.NONE, NEXT: Segment.SKILL, ...jumpToState }
-    },
-    [Segment.SKILL]: {
-      on: { PREV: Segment.EXPERIENCE, NEXT: Segment.EDU, ...jumpToState }
-    },
-    [Segment.EDU]: {
-      on: { PREV: Segment.SKILL, NEXT: Segment.LIFE, ...jumpToState }
-    },
-    [Segment.LIFE]: {
-      on: { PREV: Segment.EDU, NEXT: Segment.NONE, ...jumpToState }
+const assignPrevSegment = assign<MContext, MEvent>({
+  segment(context) {
+    const currIndex = context.segmentOrder.indexOf(context.segment);
+    const prevIndex =
+      currIndex === 0 ? context.segmentOrder.length - 1 : currIndex - 1;
+    return context.segmentOrder[prevIndex];
+  }
+});
+
+const assignNextSegment = assign<MContext, MEvent>({
+  segment(context) {
+    const currIndex = context.segmentOrder.indexOf(context.segment);
+    const nextIndex =
+      currIndex === context.segmentOrder.length - 1 ? 0 : currIndex + 1;
+    return context.segmentOrder[nextIndex];
+  }
+});
+
+const assignJumpSegment = assign<MContext, MEvent>({
+  segment(context, event) {
+    if (event.type === "JUMP") {
+      const targetIndex = context.segmentOrder.indexOf(event.segment);
+      return context.segmentOrder[targetIndex];
+    } else {
+      return context.segment;
     }
   }
 });
+
+const navigationMachine = Machine<MContext, StateSchema, MEvent>(
+  {
+    id: "navigation",
+    initial: "idle",
+    context: {
+      segment: Segment.NONE,
+      segmentOrder: [
+        Segment.NONE,
+        Segment.EXPERIENCE,
+        Segment.SKILL,
+        Segment.EDU,
+        Segment.LIFE
+      ]
+    },
+    states: {
+      idle: {
+        on: {
+          PREV: {
+            actions: "assignPrevSegment",
+            target: "moving"
+          },
+          NEXT: {
+            actions: "assignNextSegment",
+            target: "moving"
+          },
+          JUMP: {
+            actions: "assignJumpSegment",
+            target: "moving"
+          }
+        }
+      },
+      moving: {
+        after: {
+          500: {
+            target: "idle"
+          }
+        }
+      }
+    }
+  },
+  {
+    actions: {
+      assignPrevSegment,
+      assignNextSegment,
+      assignJumpSegment
+    }
+  }
+);
 
 export default defineComponent({
   name: "about",
@@ -70,10 +119,10 @@ export default defineComponent({
 
     const mounted = ref(false);
     const stateService = interpret(navigationMachine);
-    const state = ref(stateService.initialState);
+    const context = ref(stateService.initialState.context);
     const { send } = stateService;
-    stateService.onTransition(newState => {
-      state.value = newState;
+    stateService.onChange(newContext => {
+      context.value = newContext;
     });
 
     onMounted(() => {
@@ -97,7 +146,7 @@ export default defineComponent({
       if (!mounted.value) {
         return;
       }
-      const location = state.value.value;
+      const location = context.value.segment;
       const locationElement = document.querySelector(`.detail-${location}`);
       if (locationElement) {
         const style = getComputedStyle(locationElement);
@@ -109,13 +158,12 @@ export default defineComponent({
       }
     });
 
-    const jumpTo = (key: keyof typeof Segment) => {
-      const to = (`TO_` + key) as MEvent["type"];
-      send(to);
+    const jumpTo = (key: Segment) => {
+      send({ type: "JUMP", segment: key });
     };
 
     return {
-      state,
+      context,
       send,
       avatarStyle,
       jumpTo,
@@ -125,14 +173,14 @@ export default defineComponent({
 });
 </script>
 <template>
-  <div>
+  <div class="detail-wrapper">
     <div
-      v-for="(segment, key) in Segment"
-      :key="key"
+      v-for="(segment, index) in context.segmentOrder"
+      :key="index"
       class="detail"
       :class="`detail-${segment}`"
-      @click="jumpTo(key)"
-    />
+      @click="jumpTo(segment)"
+    ></div>
     <div class="avatar" :style="avatarStyle">
       <img
         src="http://www.avatarsinpixels.com/minipix/eyJNb3V0aCI6IjYiLCJQYW50cyI6IjEiLCJUb3AiOiI1IiwiQmVsdCI6IjEiLCJKYWNrZXQiOiIxIn0=/1/show.png"
@@ -141,6 +189,8 @@ export default defineComponent({
   </div>
 </template>
 <style lang="scss" scoped>
+$control-height: 100px;
+
 .avatar {
   position: absolute;
   width: var(--avatar-width);
@@ -150,7 +200,13 @@ export default defineComponent({
   left: 0;
 }
 
+.detail-wrapper {
+  position: relative;
+  height: calc(100vh - #{$control-height});
+}
+
 .detail {
+  cursor: pointer;
   position: absolute;
   &:before {
     content: "";
